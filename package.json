@@ -1,0 +1,23 @@
+{
+  "name": "great",
+  "version": "0.0.0",
+  "description": "Another task runner with js",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:fritx/great.git"
+  },
+  "keywords": [
+    "task",
+    "runner",
+    "work",
+    "flow"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fritx/great/issues"
+  }
+}
