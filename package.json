@@ -1,6 +1,6 @@
 {
   "name": "great",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Another task runner with js",
   "main": "index.js",
   "scripts": {
@@ -13,11 +13,8 @@
   "keywords": [
     "task",
     "runner",
-    "work",
+    "build",
     "flow"
   ],
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/fritx/great/issues"
-  }
+  "license": "MIT"
 }

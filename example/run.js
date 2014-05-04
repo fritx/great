@@ -1,46 +1,42 @@
-# great
+/**
+ * Created by fritx on 5/3/14.
+ */
 
-Another task runner with js
+var great = require('..');
 
-## great vs gulp vs grunt
+function createBody(title) {
+  return function body() {
+    this.emit('title', title);
+  }
+}
 
-Great compared to major Task Runners (or Build Systems)
+function createAsyncBody(title) {
+  return function asyncBody(done) {
+    this.emit('title', title);
+    var delay = 1000 * Math.random();
+    setTimeout(done, delay);
+  }
+}
 
-&nbsp; | great | gulp | grunt
-:-: | :-: | :-: | :-:
-Orienting | Data | File | File
-Stream | Yes | Yes | No
-Speed | Fast | Fast | Slow
-Flow | Clear | Clear | Mess
-Easy | Yes | No | No
-
-## great vs nodeunit vs mocha
-
-Great compared to major Test Frameworks
-
-&nbsp; | great | nodeunit | mocha
-:-: | :-: | :-: | :-:
-Polluting | No | No | Yes
-Nested | Good | Bad | Good
-Event driven | Yes | No | No
-Test only | No | Yes | Yes
-
-## Quick Look
-
-```js
 // general configuration
+great.on('start', function () {
+  log('great started!');
+});
+great.on('end', function () {
+  log('great ended!');
+});
 great.on('good', function(){
   log('----- something special -----');
 });
 great.unit.on('title', function (title) {
-  this.title = title;
-  log(this.getLevel(), 'titled: ' + title);
+  log('titled: ' + title, this.getLevel());
+  this.set('title', title);
 });
 great.unit.on('end', function () {
-  log(this.getLevel(), 'ended: ' + this.title);
+  log('ended: ' + this.get('title'), this.getLevel());
 });
 
-// run units
+// run tasks
 great.run(function () {
   this.emit('title', 'main');
 
@@ -72,6 +68,12 @@ great.run(function () {
     this.add(createBody('c-2'));
   });
 });
-```
 
-See: [example/run.js](example/run.js)
+function log(msg, level) {
+  level = level || 0;
+  var indent = '';
+  for (var i = 0; i < level; i++) {
+    indent += '    ';
+  }
+  console.log(indent + msg);
+}
