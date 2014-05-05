@@ -9,8 +9,6 @@ Great compared to major Task Runners (or Build Systems)
 &nbsp; | great | gulp | grunt
 :-: | :-: | :-: | :-:
 Orienting | Data | File | File
-Stream | Yes | Yes | No
-Speed | Fast | Fast | Slow
 Flow | Clear | Clear | Mess
 Easy | Yes | No | No
 
@@ -20,45 +18,37 @@ Great compared to major Test Frameworks
 
 &nbsp; | great | nodeunit | mocha
 :-: | :-: | :-: | :-:
-Polluting | No | No | Yes
 Nested | Good | Bad | Good
-Event driven | Yes | No | No
-Test only | No | Yes | Yes
+Test Only | No | Yes | Yes
+Event Driven | Yes | No | No
 
 ## Quick Look
 
+### A task file to load:
+
 ```js
-// general configuration
-great.on('good', function(){
-  log('----- something special -----');
-});
-great.unit.on('title', function (title) {
-  this.title = title;
-  log(this.getLevel(), 'titled: ' + title);
-});
-great.unit.on('end', function () {
-  log(this.getLevel(), 'ended: ' + this.title);
-});
+module.exports = function() {
+  // upward emitting
+  this.emit('log', 'example: run');
 
-// run units
-great.run(function () {
-  this.emit('title', 'main');
+  // downward capturing
+  this.capture('title', function (title) {
+    this.emit('log', 'titled: ' + title);
+    this.set('title', title);
+  });
+  this.capture('end', function () {
+    this.emit('log', 'ended: ' + this.get('title'));
+  });
 
+  // task loading
   this.add(function () {
     this.emit('title', 'series');
-
-    // series tasks
     this.add(createBody('a-1'));
     this.add(createBody('a-2'));
     this.add(createBody('a-3'));
-
-    great.emit('good');
   });
-
   this.add(function () {
-    this.emit('title', 'mix');
-
-    // parallel tasks
+    this.emit('title', 'parallel');
     this.add([
       createAsyncBody('b-1'),
       createAsyncBody('b-2'),
@@ -67,11 +57,36 @@ great.run(function () {
       createAsyncBody('b-5'),
       createAsyncBody('b-6')
     ]);
-
-    this.add(createBody('c-1'));
-    this.add(createBody('c-2'));
   });
+};
+```
+
+### `Greatfile.js` for entry:
+
+```js
+var great = require('great');
+var args = process.argv.slice(2);
+great(function () {
+  // task picking
+  if (args[0] === 'example') {
+    this.add(require('./example/' + args[1]));
+  }
 });
 ```
 
-See: [example/run.js](example/run.js)
+### Run tasks from command line
+
+```
+node Greatfile [arg1] [arg2] ..`
+```
+
+Or after `alias great='node Greatfile'`:
+
+```
+great [arg1] [arg2]
+```
+
+### See for more:
+
+- `Greatfile.js`: [Greatfile.js](Greatfile.js)
+- Task files: [example/](example/)

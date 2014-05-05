@@ -2,11 +2,15 @@
  * Created by fritx on 5/2/14.
  */
 
-var Emitter = require('events').EventEmitter;
-var util = require('util');
+var _slice = Array.prototype.slice;
+var _prefix = '::';
 
-var api = module.exports = new Emitter();
-api.unit = {};
+function _isBubble(event) {
+  return new RegExp('^' + _prefix).test(event);
+}
+function _toBubble(event) {
+  return _isBubble(event) ? event : _prefix + event;
+}
 
 function Unit(body) {
   this.body = body || null;
@@ -15,108 +19,126 @@ function Unit(body) {
   this.remaining = [];
   this.running = 0;
   this.data = {};
-
-  var self = this;
-  this.constructor.bindings.forEach(function(binding){
-    self[binding[0]].apply(self, binding[1]);
-  });
+  this.listeners = {};
 }
-util.inherits(Unit, Emitter);
 
-Unit.bindings = [];
-['on', 'once', 'off'].forEach(function (key) {
-  api.unit[key] = function () {
-    Unit.bindings.push([key].concat(arguments));
-  };
-});
+Unit.prototype.get = function (key) {
+  return this.data[key];
+};
+Unit.prototype.set = function (key, value) {
+  this.data[key] = value;
+};
+
+Unit.prototype.on = function (event, listener) {
+  if (event in this.listeners) {
+    this.listeners[event].push(listener);
+  } else {
+    this.listeners[event] = [listener];
+  }
+};
+Unit.prototype.capture = function (event, listener) {
+  this.on(_toBubble(event), listener);
+};
+Unit.prototype.emit = function (event) {
+  var data = _slice.call(arguments, 1);
+  this.bubble(event, data);
+  this.react(event, data);
+};
+
+Unit.prototype.bubble = function (event, data) {
+  if (this.parent) {
+    var args;
+    if (_isBubble(event)) {
+      args = [event].concat(data);
+    } else {
+      args = [_toBubble(event), this].concat(data);
+    }
+    this.parent.emit.apply(this.parent, args);
+  }
+};
+
+Unit.prototype.react = function (event, data) {
+  var that = this;
+  if (this.listeners[event]) {
+    var iterator = _isBubble(event) ? function (listener) {
+      listener.apply(data[0], data.slice(1));
+    } : function (listener) {
+      listener.apply(that, data);
+    };
+    this.listeners[event].forEach(iterator);
+  }
+};
 
 Unit.prototype.start = function () {
-  var self = this;
+  var that = this;
   this.emit('start');
-  this.emit('body-start');
-  this.on('body-end', onBodyEnd);
-  if (this.body) {
+  if (!this.body) {
+    bodyEnd();
+  } else {
     this.body(bodyEnd);
     if (this.body.length <= 0) {
       bodyEnd();
     }
-  } else {
-    bodyEnd();
   }
-  function onBodyEnd() {
-    self.emit('children-start');
-    self.on('children-end', function () {
-      self.emit('end');
-    });
-    self.walk();
-  }
-
   function bodyEnd() {
-    self.emit('body-end');
+    that.emit('children-start');
+    that.on('children-end', function () {
+      that.emit('end');
+    });
+    that.walk();
   }
-};
-
-Unit.prototype.get = function(key) {
-  return this.data[key];
-};
-Unit.prototype.set = function(key, value) {
-  this.data[key] = value;
 };
 
 Unit.prototype.add = function (bodies) {
+  var that = this;
   if (!Array.isArray(bodies)) {
     bodies = [bodies];
   }
   var bundle = bodies.map(function (body) {
     return new Unit(body);
   });
-  var self = this;
   bundle.forEach(function (child) {
-    child.parent = self;
+    child.parent = that;
+    child.emit('add');
   });
   this.children.push(bundle);
   this.remaining.push(bundle);
 };
 
 Unit.prototype.walk = function () {
-  var self = this;
-  var bundle = this.remaining.shift();
-  if (!bundle) {
-    self.emit('children-end');
+  var that = this;
+  if (this.remaining.length <= 0) {
+    this.emit('children-end');
     return;
   }
+  var bundle = this.remaining.shift();
   this.emit('bundle-start', bundle);
   this.running += bundle.length;
   bundle.forEach(function (child) {
     child.on('end', onChildEnd);
-    self.emit('child-start', child);
+    that.emit('child-start', child);
     child.start();
   });
   function onChildEnd() {
-    self.emit('child-end', this);
-    self.running -= 1;
-    if (self.running <= 0) {
-      self.emit('bundle-end', bundle);
-      self.walk();
+    that.emit('child-end', this);
+    that.running -= 1;
+    if (that.running <= 0) {
+      that.emit('bundle-end', bundle);
+      that.walk();
     }
   }
 };
 
-Unit.prototype.getLevel = function () {
-  var level = 0;
-  var parent = this.parent;
-  while (parent !== null) {
-    level += 1;
-    parent = parent.parent;
+Unit.prototype.__defineGetter__('depth', function () {
+  var counter = 0;
+  var pointer = this.parent;
+  while (pointer !== null) {
+    counter += 1;
+    pointer = pointer.parent;
   }
-  return level;
-};
+  return counter;
+});
 
-api.run = function (body) {
-  this.emit('start');
-  var top = new Unit(body);
-  top.on('end', function(){
-    api.emit('end');
-  });
-  top.start();
+module.exports = function (body) {
+  new Unit(body).start();
 };
