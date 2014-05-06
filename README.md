@@ -18,9 +18,10 @@ Great compared to major Test Frameworks
 
 &nbsp; | great | nodeunit | mocha
 :-: | :-: | :-: | :-:
-Nested | Good | Bad | Good
 Test Only | No | Yes | Yes
 Event Driven | Yes | No | No
+Nested | Good | Bad | Good
+Browser | Good | Bad | Bad
 
 ## Quick Look
 
@@ -74,7 +75,7 @@ great(function () {
 });
 ```
 
-### Run tasks from command line
+### Run tasks from command line:
 
 ```
 node Greatfile [arg1] [arg2] ..`
@@ -83,7 +84,26 @@ node Greatfile [arg1] [arg2] ..`
 Or after `alias great='node Greatfile'`:
 
 ```
-great [arg1] [arg2]
+great [arg1] [arg2] ..
+```
+
+### Also this way on **browser**:
+
+```html
+<!-- include great.js -->
+<script src="great.js"></script>
+
+<!-- define tasks -->
+<script src="task1.js"></script>
+<script src="task2.js"></script>
+
+<!-- configure tasks -->
+<script>
+  great(function() {
+    this.add(task1);
+    this.add(task2);
+  });
+</script>
 ```
 
 ### See for more:

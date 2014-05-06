@@ -10,35 +10,41 @@ module.exports = function () {
   this.emit('log', '[ example : assert ]');
 
   // downward capturing
-  this.capture('title', function (title) {
-    this.set('title', title);
+  this.capture('group', function (title) {
+    this.emit('log', title + ' :');
   });
-  this.capture('end', function () {
-    this.emit('log', this.get('title') + ' : ✔');
+  this.capture('test', function (actual, expected, msg) {
+    assert(actual, expected, msg);
+    this.emit('log', msg + ' : ✔');
   });
 
   // task loading
   this.add(function () {
-    this.emit('title', '1 + 1');
     var sum = 1 + 1;
-    assert(sum, 1);
+    this.emit('test', sum, 2, '1 + 1');
   });
   this.add(function (done) {
-    this.emit('title', 'delayed callback');
+    var that = this;
     load(function (what) {
-      assert(typeof what === 'string');
+      that.emit('test', what, 'good', 'delayed callback');
       done();
     });
     function load(cb) {
       setTimeout(function () {
         cb('good');
-      }, 500);
+      }, 300);
     }
   });
   this.add(function () {
-    this.emit('title', 'array length');
-    var arr = [1, 2, 3];
-    assert(arr.length, 3);
+    this.emit('group', 'a group');
+    this.add(function () {
+      var arr = [1, 2, 3];
+      this.emit('test', arr.length, 3, 'array length');
+    });
+    this.add(function () {
+      var str = 'hey';
+      this.emit('test', typeof str, 'string', 'string type');
+    });
   });
 
 };

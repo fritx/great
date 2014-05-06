@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Browser Example</title>
+</head>
+<body>
+
+<!-- include great.js -->
+<script src="../index.js"></script>
+
+<!-- define tasks -->
+<script>
+  var module = {};
+</script>
+<script src="run.js"></script>
+
+<!-- configure tasks -->
+<script>
+  window.onload = function () {
+    great(function () {
+      var that = this;
+
+      // downward capturing
+      this.capture('log', function (msg) {
+        log(msg, this.depth - that.depth);
+      });
+
+      // load tasks
+      this.add(module.exports);
+
+      function log(msg, offset) {
+        var indent = '';
+        for (var i = 0; i < offset - 1; i++) {
+          indent += '    ';
+        }
+        var line = indent + msg + '\n';
+        document.write(line.replace(/( )|(\n)/g, function (a) {
+          return a === ' ' ? '&nbsp;' : '<br>'
+        }));
+      }
+    });
+  };
+</script>
+
+</body>
+</html>

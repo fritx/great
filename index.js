@@ -139,6 +139,12 @@ Unit.prototype.__defineGetter__('depth', function () {
   return counter;
 });
 
-module.exports = function (body) {
+function api(body) {
   new Unit(body).start();
-};
+}
+
+if (typeof window === 'object' && window.document) {
+  window.great = api;
+} else {
+  module.exports = api;
+}
