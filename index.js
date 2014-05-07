@@ -30,15 +30,26 @@ Unit.prototype.set = function (key, value) {
 };
 
 Unit.prototype.on = function (event, listener) {
-  if (event in this.listeners) {
+  if (this.listeners[event]) {
     this.listeners[event].push(listener);
   } else {
     this.listeners[event] = [listener];
   }
 };
+Unit.prototype.off = function (event, listener) {
+  if (this.listeners[event]) {
+    var index = this.listeners[event].indexOf(listener);
+    this.listeners.splice(index, 1);
+  }
+};
+
 Unit.prototype.capture = function (event, listener) {
   this.on(_toBubble(event), listener);
 };
+Unit.prototype.uncapture = function (event, listener) {
+  this.off(_toBubble(event), listener);
+};
+
 Unit.prototype.emit = function (event) {
   var data = _slice.call(arguments, 1);
   this.bubble(event, data);
@@ -46,6 +57,12 @@ Unit.prototype.emit = function (event) {
 };
 
 Unit.prototype.bubble = function (event, data) {
+
+  // not bubble on if already listening
+  if (_isBubble(event) &&
+    this.listeners[event] &&
+    this.listeners[event].length >= 1) return;
+
   if (this.parent) {
     var args;
     if (_isBubble(event)) {
@@ -99,7 +116,6 @@ Unit.prototype.add = function (bodies) {
   });
   bundle.forEach(function (child) {
     child.parent = that;
-    child.emit('add');
   });
   this.children.push(bundle);
   this.remaining.push(bundle);
